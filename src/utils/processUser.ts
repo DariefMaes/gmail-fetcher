@@ -7,6 +7,7 @@ config();
 
 interface Email {
   email: string;
+  text_email: string;
   subject: string;
   from_name: any;
   from_email: any;
@@ -45,7 +46,7 @@ export const processUser = async (userId: string) => {
     getSummaryCategory({ email: result, userId })
   );
   const categoriesFetched = await Promise.all(categories);
-  console.log(categoriesFetched);
+  console.log("Fetched", categoriesFetched);
 
   // Push emails to Supabase
   await pushEmails(categoriesFetched);

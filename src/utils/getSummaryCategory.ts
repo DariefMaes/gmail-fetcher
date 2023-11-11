@@ -6,6 +6,7 @@ config();
 
 interface Email {
   email: string;
+  text_email: string;
   subject: string;
   from_name: any;
   from_email: any;
@@ -63,7 +64,7 @@ export const getSummaryCategory = async ({
     });
 
     const res = await chain.call({
-      email: email.email,
+      email: email.text_email,
     });
 
     return {

@@ -1,3 +1,4 @@
+import { schedule } from "node-cron";
 import { config } from "dotenv";
 import { supabase } from "./utils/supabase.js";
 import { processUser } from "./utils/processUser.js";
@@ -31,9 +32,9 @@ const main = async () => {
     // console.log(results);
     // console.log(results[0][0]);
 };
-// const task = schedule("* * * * *", async () => {
-//   console.log("running");
-// });
-main();
-// task.start();
+const task = schedule("* * * * *", async () => {
+    console.log("running");
+    main();
+});
+task.start();
 //# sourceMappingURL=index.js.map

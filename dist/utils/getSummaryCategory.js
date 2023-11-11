@@ -35,7 +35,7 @@ export const getSummaryCategory = async ({ email, userId, }) => {
             outputVariables: ["summary", "categories"],
         });
         const res = await chain.call({
-            email: email.email,
+            email: email.text_email,
         });
         return {
             summary: res.summary,

@@ -24,7 +24,7 @@ export const processUser = async (userId) => {
     //Summarize and categorize emails
     const categories = emailResults.map((result) => getSummaryCategory({ email: result, userId }));
     const categoriesFetched = await Promise.all(categories);
-    console.log(categoriesFetched);
+    console.log("Fetched", categoriesFetched);
     // Push emails to Supabase
     await pushEmails(categoriesFetched);
 };

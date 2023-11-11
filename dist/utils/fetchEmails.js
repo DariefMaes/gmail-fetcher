@@ -36,6 +36,27 @@ const cleanEmail = (email) => {
     const reducedLinebreaks = cleanedEmail.replace(/\n{2,}/g, "\n");
     return reducedLinebreaks;
 };
+const findPlainText = (emailOrPart) => {
+    // If this part/email has body data and it's text/plain
+    if (emailOrPart.body &&
+        emailOrPart.body.data &&
+        emailOrPart.mimeType === "text/plain") {
+        return cleanEmail(Buffer.from(emailOrPart.body.data, "base64").toString("utf-8"));
+    }
+    // If this part/email has nested parts, go deeper
+    if (emailOrPart.parts) {
+        for (let innerPart of emailOrPart.parts) {
+            const content = findPlainText(innerPart);
+            if (content)
+                return cleanEmail(content); // Return the first text/plain found
+        }
+    }
+    // If the email has a payload, check inside the payload
+    if (emailOrPart.payload) {
+        return findPlainText(emailOrPart.payload);
+    }
+    return null; // If no text/plain content is found, return null
+};
 const findPlainTextOrHTML = (emailOrPart) => {
     // If this part/email has body data and it's text/plain
     if (emailOrPart.body &&
@@ -111,10 +132,7 @@ export const fetchEmails = async (data) => {
     if (!threads.data.threads) {
         return [];
     }
-    const fetchableThreads = threads.data.threads.filter((thread) => {
-        return thread.id !== latestEmail?.thread_id;
-    });
-    const threadDetailsPromises = fetchableThreads.map((thread) => gmail.users.threads.get({ userId: "me", id: thread.id }));
+    const threadDetailsPromises = threads.data.threads.map((thread) => gmail.users.threads.get({ userId: "me", id: thread.id }));
     const threadDetails = await Promise.all(threadDetailsPromises);
     const latestEmails = threadDetails.map((thread) => {
         const messages = thread.data.messages;
@@ -122,6 +140,7 @@ export const fetchEmails = async (data) => {
             return "";
         }
         const cleanedEmail = findPlainTextOrHTML(messages[messages.length - 1]);
+        const textEmail = findPlainText(messages[messages.length - 1]).slice(0, 1500);
         const headers = messages[messages.length - 1].payload.headers;
         const people_info = {
             from_name: extractNameAndEmail(findHeader(headers, "From")).name,
@@ -131,6 +150,7 @@ export const fetchEmails = async (data) => {
         };
         const response = {
             email: cleanedEmail,
+            text_email: textEmail,
             subject: findHeader(headers, "Subject"),
             from_name: people_info.from_name,
             from_email: people_info.from_email,
@@ -141,8 +161,12 @@ export const fetchEmails = async (data) => {
             id: thread.data.id,
             last_message_id: messages[messages.length - 1].id,
         };
-        return response;
+        const threadDate = dateToEpochSeconds(new Date(findHeader(headers, "Date")));
+        if (threadDate > dateToEpochSeconds(new Date(latestEmail?.email_date))) {
+            return response;
+        }
+        return;
     });
-    return latestEmails;
+    return latestEmails.filter((email) => email);
 };
 //# sourceMappingURL=fetchEmails.js.map
